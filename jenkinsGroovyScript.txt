@@ -38,12 +38,10 @@ pipeline {
                     def message = "Deployment and tests completed.\n" +
                                   "Reverse Proxy - Node: ${reverseProxyNode}, Python: ${reverseProxyPython}.\n" +
                                   "Subdomain Routing - Node: ${subdomainNode}, Python: ${subdomainPython}."
-
-                    // Send email
                     emailext(
                         subject: "Deployment Status",
                         body: message,
-                        to: "your-email@example.com" // Replace with the recipient's email
+                        to: "rakinulhaque3@gmail.com"
                     )
                 }
             }
