@@ -1,0 +1,53 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git 'https://github.com/rakinulhaque/Ansible.git'
+            }
+        }
+        stage('Deploy with Ansible') {
+            steps {
+                script {
+                    ansiblePlaybook playbook: 'roleBasedDeoloyment/deploy.yml', inventory: 'roleBasedDeoloyment/inventory.ini'
+                }
+            }
+        }
+        stage('Test Reverse Proxy') {
+            steps {
+                script {
+                    def reverseProxyNode = sh(script: 'curl -s -o /dev/null -w "%{http_code}" http://localhost/node', returnStdout: true).trim()
+                    def reverseProxyPython = sh(script: 'curl -s -o /dev/null -w "%{http_code}" http://localhost/python', returnStdout: true).trim()
+                    echo "Reverse Proxy Test Node: ${reverseProxyNode}, Python: ${reverseProxyPython}"
+                }
+            }
+        }
+        stage('Test Subdomain Routing') {
+            steps {
+                script {
+                    def subdomainNode = sh(script: 'curl -s -o /dev/null -w "%{http_code}" http://node.localhost', returnStdout: true).trim()
+                    def subdomainPython = sh(script: 'curl -s -o /dev/null -w "%{http_code}" http://python.localhost', returnStdout: true).trim()
+                    echo "Subdomain Routing Test Node: ${subdomainNode}, Python: ${subdomainPython}"
+                }
+            }
+        }
+        stage('Send Email Notification') {
+            steps {
+                script {
+                    def message = "Deployment and tests completed.\n" +
+                                  "Reverse Proxy - Node: ${reverseProxyNode}, Python: ${reverseProxyPython}.\n" +
+                                  "Subdomain Routing - Node: ${subdomainNode}, Python: ${subdomainPython}."
+
+                    // Send email
+                    emailext(
+                        subject: "Deployment Status",
+                        body: message,
+                        to: "your-email@example.com" // Replace with the recipient's email
+                    )
+                }
+            }
+        }
+    }
+}
+
